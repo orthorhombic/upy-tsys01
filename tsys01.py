@@ -1,9 +1,6 @@
 # based on: https://github.com/bluerobotics/BlueRobotics_TSYS01_Library/blob/master/TSYS01.cpp
-# TODO: move init-only code to init function
-# TODO: ensure sensor left in low power mode after one-shot reading
-# TODO: add function to return F/C
 
-import time
+import utime
 
 
 class TSYS01(object):
@@ -20,6 +17,10 @@ class TSYS01(object):
         except:
             print("Bus %d is not available.") % bus
             print("Available busses are listed as /dev/i2c*")
+
+        self.reset()
+
+        self.calibration = self.getCalibration()
 
     def writeto(self, address, value):
         temp = bytearray(1)
@@ -60,23 +61,19 @@ class TSYS01(object):
 
     def reset(self):
         self.writeto(TSYS01_ADDR, TSYS01_RESET)
-        time.sleep(0.01)
+        utime.sleep_ms(10)
 
     def convert(self):
         self.writeto(TSYS01_ADDR, TSYS01_ADC_TEMP_CONV)
-        time.sleep(0.01)
+        utime.sleep_ms(10)
         self.writeto(TSYS01_ADDR, TSYS01_ADC_READ)
 
     def getTemp(self):
-        self.reset()
-
-        C = self.getCalibration()
-
         self.convert()
 
         D1 = self.readfrom_3(TSYS01_ADDR)
 
-        t = self.calcTemp(C, D1)
+        t = self.calcTemp(self.calibration, D1)
 
         return t
 
