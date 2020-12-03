@@ -77,6 +77,54 @@ class TSYS01(object):
 
         return t
 
+    def serialnum(self):
+        # 2^8 * SN23...8 + SN7...0
+
+        # sn23-8
+        part1 = self.calibration[7]
+        # part1 = 0x0005
+
+        intermediate = (self.calibration[7]).to_bytes(2, "big")
+        # intermediate = (0x96D9).to_bytes(2, "big")
+        # sn 7-0
+        part2 = intermediate[0]
+        # part2 = 0x96D9 >> 8 # same as 0x96D9 // 2**8
+
+        checksum = intermediate[1]
+
+        serial = 2 ** 8 * part1 + part2
+
+        # testcal = [ # example from datasheet (does not make sense)
+        #     0,
+        #     28446,
+        #     24926,
+        #     36016,
+        #     32791,
+        #     40781,
+        #     0x0005,
+        #     0x96D9,
+        # ]
+
+        val = 0
+        for i in testcal:
+            # bytewise addition of PROM
+            # unclear if this is appropriate algorithm to use checksum
+            temp = i.to_bytes(2, "big")
+            val += temp[0]
+            val += temp[1]
+            print(i, temp[0], temp[1], val.to_bytes(2, "big")[1])
+            # may need to add checksum to total sum?
+
+        # val = sum(testcal) + checksum
+        # print (val,val.to_bytes(3, "big")[-1])
+
+        if val.to_bytes(2, "big")[1] == 0:
+            print("checksum success")
+
+        # bytes to int
+        # int.from_bytes('\x05\x7f', "big")
+        return serial
+
 
 # import tsys01
 # from machine import I2C
